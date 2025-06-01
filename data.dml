@@ -1,0 +1,134 @@
+--------------------------------------------------------------------------------
+-- 1. INSERTAR DATOS EN dbo.Fiscalia
+--------------------------------------------------------------------------------
+SET IDENTITY_INSERT dbo.Fiscalia ON;
+
+INSERT INTO dbo.Fiscalia (FiscaliaID, NombreFiscalia, Ubicacion, Telefono)
+VALUES
+    (1, N'Fiscalía Metropolitana',    N'Ciudad de Guatemala',     N'502-2233-4455'),
+    (2, N'Fiscalía Regional Chimaltenango', N'Tecpán, Chimaltenango', N'502-7766-8899');
+
+SET IDENTITY_INSERT dbo.Fiscalia OFF;
+GO
+
+--------------------------------------------------------------------------------
+-- 2. INSERTAR DATOS EN dbo.Permiso
+--------------------------------------------------------------------------------
+SET IDENTITY_INSERT dbo.Permiso ON;
+
+INSERT INTO dbo.Permiso (PermisoID, NombrePermiso, Descripcion)
+VALUES
+    (1, N'CREAR_CASO',    N'Permite crear nuevos casos'),
+    (2, N'ASIGNAR_CASO',  N'Permite reasignar casos'),
+    (3, N'VER_INFORMES',  N'Permite generar y ver informes'),
+    (4, N'EDITAR_CASO',   N'Permite actualizar detalles de casos');
+
+SET IDENTITY_INSERT dbo.Permiso OFF;
+GO
+
+--------------------------------------------------------------------------------
+-- 3. INSERTAR DATOS EN dbo.Fiscal
+--------------------------------------------------------------------------------
+SET IDENTITY_INSERT dbo.Fiscal ON;
+
+INSERT INTO dbo.Fiscal (FiscalID, Nombre, CorreoElectronico, Usuario, Contrasena, Rol, FiscaliaID)
+VALUES
+    (1, N'Mario Obed Morales',       N'momorale@mp.gob.gt',   N'momorale',   N'Abc123!@#', N'FISCAL',  1),
+    (2, N'Ana María Morales',        N'amomorale@mp.gob.gt',  N'amomorale',  N'Xyz789$%^', N'FISCAL',  2),
+    (3, N'Juan Pérez López',         N'jperez@mp.gob.gt',     N'jperez',     N'Zkd4Rt$5',  N'SUPERVISOR', 1);
+
+SET IDENTITY_INSERT dbo.Fiscal OFF;
+GO
+
+--------------------------------------------------------------------------------
+-- 4. INSERTAR DATOS EN dbo.Caso
+--------------------------------------------------------------------------------
+-- FechaRegistro por defecto se pone sysutcdatetime() si no especificamos,
+-- pero para tener valores concretos, los asigno manualmente.
+
+SET IDENTITY_INSERT dbo.Caso ON;
+
+INSERT INTO dbo.Caso
+(
+    CasoID,
+    FechaRegistro,
+    Estado,
+    Progreso,
+    Descripcion,
+    FechaUltimaActualizacion,
+    FiscalID
+)
+VALUES
+    (1,  N'2025-07-01 08:15:00', N'PENDIENTE',   N'0%',    N'Denuncia de robo en zona 1',      N'2025-07-01 08:15:00', 1),
+    (2,  N'2025-07-02 09:30:00', N'EN_PROGRESO', N'30%',   N'Investigación preliminar de hurto', N'2025-07-05 14:00:00', 2),
+    (3,  N'2025-07-03 14:45:00', N'CERRADO',     N'100%',  N'Caso archivado: allanamiento fallido', N'2025-07-10 10:20:00', 1),
+    (4,  N'2025-07-04 11:00:00', N'PENDIENTE',   N'0%',    N'Seguimiento a caso de fraude bancario', N'2025-07-04 11:00:00', 3);
+
+SET IDENTITY_INSERT dbo.Caso OFF;
+GO
+
+--------------------------------------------------------------------------------
+-- 5. INSERTAR DATOS EN dbo.Informe
+--------------------------------------------------------------------------------
+SET IDENTITY_INSERT dbo.Informe ON;
+
+INSERT INTO dbo.Informe (InformeID, FechaGeneracion, TipoInforme, DescripcionBreve)
+VALUES
+    (1, N'2025-07-05 18:00:00', N'Informe Mensual Julio 2025', N'Reporte de casos abiertos y en progreso'),
+    (2, N'2025-07-10 12:30:00', N'Informe Semanal Especial',   N'Análisis de casos cerrados y tiempos de resolución');
+
+SET IDENTITY_INSERT dbo.Informe OFF;
+GO
+
+--------------------------------------------------------------------------------
+-- 6. INSERTAR DATOS EN dbo.Informe_Caso (relación N:M Informe ↔ Caso)
+--------------------------------------------------------------------------------
+INSERT INTO dbo.Informe_Caso (InformeID, CasoID) VALUES
+    (1, 1),
+    (1, 2),
+    (1, 4),
+    (2, 2),
+    (2, 3);
+GO
+
+--------------------------------------------------------------------------------
+-- 7. INSERTAR DATOS EN dbo.Fiscal_Permiso (relación N:M Fiscal ↔ Permiso)
+--------------------------------------------------------------------------------
+INSERT INTO dbo.Fiscal_Permiso (FiscalID, PermisoID) VALUES
+    -- Mario (FiscalID = 1) tiene permisos para crear caso y ver informes
+    (1, 1),  -- CREAR_CASO
+    (1, 3),  -- VER_INFORMES
+    -- Ana María (FiscalID = 2) tiene permiso para asignar caso
+    (2, 2),  -- ASIGNAR_CASO
+    (2, 3),  -- VER_INFORMES
+    -- Juan Pérez (FiscalID = 3) tiene todos los permisos
+    (3, 1),
+    (3, 2),
+    (3, 3),
+    (3, 4); -- EDITAR_CASO
+GO
+
+--------------------------------------------------------------------------------
+-- 8. INSERTAR DATOS EN dbo.LogReasignacionFallida
+--------------------------------------------------------------------------------
+-- Ejemplo de intento fallido: quisieron reasignar el CasoID = 1 (perteneciente a fiscal 1 en fiscalía 1)
+-- hacia el FiscalID = 2 (fiscalía 2), pero la fiscalía no coincide.
+-- FechaHoraIntento se deja manual para tener datos concretos.
+
+SET IDENTITY_INSERT dbo.LogReasignacionFallida ON;
+
+INSERT INTO dbo.LogReasignacionFallida
+(
+    LogID,
+    FechaHoraIntento,
+    Motivo,
+    CasoID,
+    FiscalAnteriorID,
+    FiscalNuevoID
+)
+VALUES
+    (1, N'2025-07-06 10:00:00', N'El nuevo fiscal no pertenece a la misma fiscalía', 1, 1, 2),
+    (2, N'2025-07-07 16:20:00', N'El caso ya no está en estado PENDIENTE',             4, 3, 1);
+
+SET IDENTITY_INSERT dbo.LogReasignacionFallida OFF;
+GO
